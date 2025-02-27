@@ -3,7 +3,6 @@
 // Import modules
 const mqtt = require('mqtt');
 const sql = require('mssql');
-const { DateTime } = require('luxon'); // Import Luxon for timezone conversion
 
 // Debugging
 console.log("Starting MQTT to SQL script...");
@@ -50,13 +49,6 @@ async function connectToDatabase() {
     }
 }
 
-// Convert `weld_start_time` (seconds) to CST/CDT `DATETIME`
-function convertToCentralTime(timestampSeconds) {
-    return DateTime.fromSeconds(timestampSeconds, { zone: 'utc' })
-        .setZone('America/Chicago') // Converts to CST/CDT
-        .toFormat('yyyy-MM-dd HH:mm:ss');
-}
-
 // Connect to the database initially
 connectToDatabase();
 
@@ -76,9 +68,6 @@ client.on('message', async (topic, message) => {
 
         // Ensure the database connection is active before proceeding
         await ensureDatabaseConnection();
-
-        const timestampCT = DateTime.fromMillis(data.timestamp, { zone: 'utc' }).setZone('America/Chicago').toJSDate();
-        const weldStartTimeCT = DateTime.fromSeconds(data.weld_start_time, { zone: 'utc' }).setZone('America/Chicago').toJSDate();
 
         // Insert Data into SQL Table
         const query = `
@@ -145,8 +134,6 @@ client.on('message', async (topic, message) => {
 
             // Execute the query
         await pool.request()
-            .input('timestamp', sql.BigInt, timestampBigInt)
-            .input('weld_start_time', sql.DateTime, weldStartCST)
             .input('timestamp', sql.BigInt, data.timestamp)
             .input('weld_record_index', sql.Int, data.weld_record_index)
             .input('current_average', sql.Float, data.current.average)
@@ -228,5 +215,7 @@ client.on('message', async (topic, message) => {
 
     } catch (error) {
         console.error("Error processing message:", error);
+    }
+});
     }
 });
