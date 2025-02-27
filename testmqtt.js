@@ -29,7 +29,7 @@ const dbConfig = {
     user: 'webuser',
     password: 'Webpassword01!',
     server: '192.168.2.11', // Change this
-    database: 'MfgProduction',
+    database: 'testing',
     options: {
         encrypt: false, // Set to true if using Azure SQL
         trustServerCertificate: true
